@@ -1,0 +1,60 @@
+version: '3'
+volumes:
+  postgres_data: {}
+  elastic_data: {}
+
+services:
+  app_1:
+    build:
+      context: .
+      dockerfile: ./docker/app/Dockerfile
+    environment:
+      - MIX_ENV=dev
+      - PGPASSWORD=postgres
+      - PORT=4000
+      - NODENAME=a@127.0.0.1
+    working_dir: /srv/pow_demo
+    tty: true
+    volumes:
+      - .:/srv/pow_demo
+    depends_on:
+      - postgres
+
+  app_2:
+    build:
+      context: .
+      dockerfile: ./docker/app/Dockerfile
+    environment:
+      - MIX_ENV=dev
+      - PGPASSWORD=postgres
+      - PORT=4001
+      - NODENAME=b@127.0.0.1
+    working_dir: /srv/pow_demo
+    tty: true
+    volumes:
+      - .:/srv/pow_demo
+    depends_on:
+      - postgres
+      - app_1
+
+  postgres:
+    image: postgres:12.2
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    logging:
+      driver: "none"
+
+  web:
+    build:
+      context: .
+      dockerfile: ./docker/web/Dockerfile
+    volumes:
+      - .:/srv/pow_demo
+    logging:
+      driver: "none"
+    depends_on:
+      - app
+    ports:
+      - '8080:80'
